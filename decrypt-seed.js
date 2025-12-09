@@ -26,7 +26,7 @@ function decryptSeed(encryptedSeedB64, privateKey) {
     // Step 2: RSA/OAEP decrypt with SHA-256
     console.log('\nStep 2: RSA/OAEP decryption with SHA-256...');
     console.log('  - Padding: OAEP');
-    console.log('  - MGF: MGF1(SHA-256)\n[MGF =  Mask Generation Function]');
+    console.log('  - MGF: MGF1(SHA-256)');
     console.log('  - Hash: SHA-256');
     console.log('  - Label: None');
     
@@ -91,11 +91,17 @@ try {
     console.log(decryptedSeed);
     console.log('\n═══════════════════════════════════════════════════════\n');
     
-    // Store at /data/seed.txt (for Docker container usage later)
-    // For now, we'll save it locally
-    console.log('Saving decrypted seed to seed.txt...');
-    fs.writeFileSync('seed.txt', decryptedSeed, { mode: 0o600 });
-    console.log('✓ Seed saved to: seed.txt');
+    // Store at data/seed.txt
+    const dataDir = 'data';
+    if (!fs.existsSync(dataDir)) {
+        fs.mkdirSync(dataDir, { recursive: true });
+        console.log(`✓ Created directory: ${dataDir}`);
+    }
+    
+    const seedPath = `${dataDir}/seed.txt`;
+    console.log(`Saving decrypted seed to ${seedPath}...`);
+    fs.writeFileSync(seedPath, decryptedSeed, { mode: 0o600 });
+    console.log(`✓ Seed saved to: ${seedPath}`);
     
     console.log('\n✅ Step 5 Complete! Decrypted seed ready for TOTP generation.');
     console.log('\n⚠️  IMPORTANT: Keep this seed secure and do NOT commit to Git!\n');

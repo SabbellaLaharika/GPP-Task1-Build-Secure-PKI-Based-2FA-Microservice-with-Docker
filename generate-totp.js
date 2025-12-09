@@ -134,8 +134,9 @@ try {
     console.log('═══════════════════════════════════════════════════════\n');
     
     // Read decrypted seed
-    console.log('Reading decrypted seed from seed.txt...');
-    const hexSeed = fs.readFileSync('seed.txt', 'utf8').trim();
+    const seedPath = 'data/seed.txt';
+    console.log(`Reading decrypted seed from ${seedPath}...`);
+    const hexSeed = fs.readFileSync(seedPath, 'utf8').trim();
     console.log('✓ Seed loaded\n');
     
     // Validate seed format
