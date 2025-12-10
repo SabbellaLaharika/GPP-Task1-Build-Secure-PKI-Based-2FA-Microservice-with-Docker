@@ -17,8 +17,14 @@ RUN npm ci --only=production
 # ============================================
 FROM node:18-alpine
 
-# Install cron and timezone tools
-RUN apk add --no-cache tzdata dcron
+# Install system dependencies
+# - Update package manager
+# - Install cron daemon
+# - Install timezone data
+# - Clean up caches
+RUN apk update && \
+    apk add --no-cache tzdata dcron && \
+    rm -rf /var/cache/apk/*
 
 # Set timezone to UTC
 ENV TZ=UTC
@@ -57,7 +63,9 @@ RUN echo '#!/bin/sh' > /app/cron-job.sh && \
     chmod +x /app/cron-job.sh
 
 # Install cron job (runs every minute)
-RUN echo "* * * * * /app/cron-job.sh" > /etc/crontabs/root
+# Set permissions to 0644 as required
+RUN echo "* * * * * /app/cron-job.sh" > /etc/crontabs/root && \
+    chmod 0644 /etc/crontabs/root
 
 # Create startup script
 RUN echo '#!/bin/sh' > /app/start.sh && \
