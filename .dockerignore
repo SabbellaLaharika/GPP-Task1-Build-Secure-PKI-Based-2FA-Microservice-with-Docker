@@ -1,0 +1,16 @@
+node_modules
+npm-debug.log
+data
+encrypted_seed.txt
+seed.txt
+*.md
+.git
+.gitignore
+.env
+decrypt-seed.js
+generate-totp.js
+request-seed.js
+verify-key.js
+generate-keys.js
+instructor_public.pem
+student_public.pem

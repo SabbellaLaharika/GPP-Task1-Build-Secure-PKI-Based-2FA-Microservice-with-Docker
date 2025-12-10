@@ -1,0 +1,29 @@
+# version: '3.8'
+
+services:
+  pki-2fa-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: pki-2fa-microservice
+    ports:
+      - "8080:8080"
+    volumes:
+      - seed-data:/data
+      - cron-output:/cron
+    environment:
+      - NODE_ENV=production
+      - TZ=UTC
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+
+volumes:
+  seed-data:
+    driver: local
+  cron-output:
+    driver: local
