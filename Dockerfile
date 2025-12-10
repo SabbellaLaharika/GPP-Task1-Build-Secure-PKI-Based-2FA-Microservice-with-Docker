@@ -40,6 +40,10 @@ COPY --from=builder /app/node_modules ./node_modules
 COPY package.json ./
 COPY server.js ./
 COPY student_private.pem ./
+COPY scripts/ ./scripts/
+
+# Make cron script executable
+RUN chmod +x /app/scripts/log_2fa_cron.js
 
 # Create volume mount points for persistent data
 RUN mkdir -p /data /cron && \
@@ -47,19 +51,8 @@ RUN mkdir -p /data /cron && \
 
 # Create cron job script
 RUN echo '#!/bin/sh' > /app/cron-job.sh && \
-    echo '# Read seed and generate TOTP code' >> /app/cron-job.sh && \
-    echo 'if [ ! -f /data/seed.txt ]; then' >> /app/cron-job.sh && \
-    echo '    echo "$(date -u +"%Y-%m-%d %H:%M:%S") - ERROR: Seed not found" > /cron/last_code.txt' >> /app/cron-job.sh && \
-    echo '    exit 1' >> /app/cron-job.sh && \
-    echo 'fi' >> /app/cron-job.sh && \
-    echo 'TIMESTAMP=$(date -u +"%Y-%m-%d %H:%M:%S")' >> /app/cron-job.sh && \
-    echo 'RESPONSE=$(wget -qO- http://localhost:8080/generate-2fa)' >> /app/cron-job.sh && \
-    echo 'CODE=$(echo "$RESPONSE" | grep -o "\"code\":\"[0-9]*\"" | cut -d"\"" -f4)' >> /app/cron-job.sh && \
-    echo 'if [ -n "$CODE" ]; then' >> /app/cron-job.sh && \
-    echo '    echo "$TIMESTAMP - 2FA Code: $CODE" > /cron/last_code.txt' >> /app/cron-job.sh && \
-    echo 'else' >> /app/cron-job.sh && \
-    echo '    echo "$TIMESTAMP - ERROR: Failed to generate code" > /cron/last_code.txt' >> /app/cron-job.sh && \
-    echo 'fi' >> /app/cron-job.sh && \
+    echo '# Cron job to generate TOTP every minute' >> /app/cron-job.sh && \
+    echo 'cd /app && /usr/local/bin/node scripts/log_2fa_cron.js >> /cron/last_code.txt 2>&1' >> /app/cron-job.sh && \
     chmod +x /app/cron-job.sh
 
 # Install cron job (runs every minute)

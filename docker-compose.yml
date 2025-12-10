@@ -1,29 +1,26 @@
-# version: '3.8'
-
 services:
-  pki-2fa-service:
+  pki-2fa-service:              # Service name
     build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: pki-2fa-microservice
+      context: .                 # Build from current directory
+      dockerfile: Dockerfile     # Use this Dockerfile
+    
+    container_name: pki-2fa-microservice  # Name of container
+    
     ports:
-      - "8080:8080"
+      - "8080:8080"              # Map port 8080 (host:container)
+    
     volumes:
-      - seed-data:/data
-      - cron-output:/cron
+      - seed-data:/data          # Persistent storage for seed
+      - cron-output:/cron        # Persistent storage for cron logs
+      - ./student_private.pem:/app/student_private.pem:ro  # Mount key files
+      - ./student_public.pem:/app/student_public.pem:ro
+      - ./instructor_public.pem:/app/instructor_public.pem:ro
+    
     environment:
-      - NODE_ENV=production
-      - TZ=UTC
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/"]
-      interval: 30s
-      timeout: 3s
-      retries: 3
-      start_period: 5s
+      - TZ=UTC                   # Set timezone
+    
+    restart: unless-stopped      # Auto-restart on failure
 
 volumes:
-  seed-data:
-    driver: local
-  cron-output:
-    driver: local
+  seed-data:                     # Named volume for seed data
+  cron-output:                   # Named volume for cron output

@@ -1,0 +1,2 @@
+cron/2fa-cron text eol=lf
+scripts/log_2fa_cron.js text eol=lf
