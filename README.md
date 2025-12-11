@@ -332,7 +332,7 @@ docker-compose down
 ├── data/                          # Persistent seed storage (not committed)
 │   └── seed.txt                   # Decrypted 64-char hex seed
 ├── scripts/                       # Automation scripts
-│   └── log_2fa_cron.js           # TOTP generation for cron
+│   └── log_2fa_cron.js            # TOTP generation for cron
 ├── cron/                          # Cron configuration
 │   └── 2fa-cron                   # Cron job definition (LF line endings)
 ├── server.js                      # Express.js API server
@@ -350,7 +350,8 @@ docker-compose down
 ├── .gitignore                     # Git exclusions
 ├── .gitattributes                 # Line ending configuration
 ├── package.json                   # Node.js dependencies
-└── README.md                      # This file
+└──  README.md                     # This file
+
 ```
 
 ---
