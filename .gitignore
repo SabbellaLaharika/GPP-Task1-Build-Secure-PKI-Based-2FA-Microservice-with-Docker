@@ -7,9 +7,6 @@ seed.txt
 # Node.js dependencies
 node_modules/
 
-# Commit Proof
-commit_proof.json
-
 # Data directory (persistent storage)
 data/
 
@@ -34,3 +31,7 @@ Thumbs.db
 
 # Optional npm cache directory
 .npm
+
+
+# Commit Proof
+commit_proof.json
