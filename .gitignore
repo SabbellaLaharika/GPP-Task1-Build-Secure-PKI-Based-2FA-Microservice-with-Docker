@@ -7,6 +7,9 @@ seed.txt
 # Node.js dependencies
 node_modules/
 
+# Commit Proof
+commit_proof.json
+
 # Data directory (persistent storage)
 data/
 
