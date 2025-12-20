@@ -26,7 +26,9 @@ RUN apk update && \
     apk add --no-cache tzdata dcron && \
     rm -rf /var/cache/apk/*
 
-# Set timezone to UTC
+# Configure timezone
+# - Create symlink to UTC timezone
+# - Set TZ environment variable
 ENV TZ=UTC
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
@@ -42,10 +44,10 @@ COPY server.js ./
 COPY student_private.pem ./
 COPY scripts/ ./scripts/
 
-# Make cron script executable
-RUN chmod +x /app/scripts/log_2fa_cron.js
-
-# Create volume mount points for persistent data
+# Create volume mount points
+# - Create /data directory
+# - Create /cron directory
+# - Set permissions (755)
 RUN mkdir -p /data /cron && \
     chmod 755 /data /cron
 
@@ -66,16 +68,16 @@ RUN echo '#!/bin/sh' > /app/start.sh && \
     echo 'echo "Starting PKI-Based 2FA Microservice..."' >> /app/start.sh && \
     echo 'echo "============================================"' >> /app/start.sh && \
     echo '' >> /app/start.sh && \
-    echo '# Start cron daemon' >> /app/start.sh && \
-    echo 'crond -b -l 2' >> /app/start.sh && \
+    echo '# Start cron daemon in background' >> /app/start.sh && \
+    echo 'crond -b -l 2 2>&1' >> /app/start.sh && \
     echo 'echo "✓ Cron daemon started"' >> /app/start.sh && \
     echo '' >> /app/start.sh && \
-    echo '# Start API server' >> /app/start.sh && \
+    echo '# Start API server (foreground)' >> /app/start.sh && \
     echo 'echo "✓ Starting API server on port 8080..."' >> /app/start.sh && \
-    echo 'node server.js' >> /app/start.sh && \
+    echo 'exec node server.js' >> /app/start.sh && \
     chmod +x /app/start.sh
 
-# Expose port 8080
+# EXPOSE 8080
 EXPOSE 8080
 
 # Create volumes
