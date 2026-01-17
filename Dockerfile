@@ -28,9 +28,15 @@ WORKDIR /app
 # - dcron : cron daemon
 # - tzdata: timezone support
 # ------------------------------------------------
-RUN apk add --no-cache tzdata dcron wget && \
+RUN apk add --no-cache \
+      tzdata \
+      dcron \
+      curl \
+      jq \
+      wget && \
     ln -snf /usr/share/zoneinfo/UTC /etc/localtime && \
     echo "UTC" > /etc/timezone
+
 
 # ------------------------------------------------
 # Copy Node.js dependencies
