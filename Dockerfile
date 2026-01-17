@@ -1,91 +1,96 @@
 # ============================================
-# Stage 1: Builder (Prepare dependencies)
+# Stage 1: Builder (Dependencies only)
 # ============================================
 FROM node:18-alpine AS builder
 
-# Set working directory
 WORKDIR /app
 
-# Copy package files
-COPY package*.json ./
+# Copy package files for caching
+COPY package.json package-lock.json ./
 
-# Install dependencies
+# Install production dependencies
 RUN npm ci --only=production
 
+
 # ============================================
-# Stage 2: Runtime (Final image)
+# Stage 2: Runtime (Final Image)
 # ============================================
 FROM node:18-alpine
 
-# Install system dependencies
-# - Update package manager
-# - Install cron daemon
-# - Install timezone data
-# - Clean up caches
-RUN apk update && \
-    apk add --no-cache tzdata dcron && \
-    rm -rf /var/cache/apk/*
-
-# Configure timezone
-# - Create symlink to UTC timezone
-# - Set TZ environment variable
+# ------------------------------------------------
+# Environment
+# ------------------------------------------------
 ENV TZ=UTC
-RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
-
-# Set working directory
 WORKDIR /app
 
-# Copy dependencies from builder stage
-COPY --from=builder /app/node_modules ./node_modules
+# ------------------------------------------------
+# System dependencies
+# - dcron : cron daemon
+# - tzdata: timezone support
+# ------------------------------------------------
+RUN apk add --no-cache tzdata dcron wget && \
+    ln -snf /usr/share/zoneinfo/UTC /etc/localtime && \
+    echo "UTC" > /etc/timezone
 
-# Copy application code
+# ------------------------------------------------
+# Copy Node.js dependencies
+# ------------------------------------------------
+COPY --from=builder /app/node_modules ./node_modules
 COPY package.json ./
+
+# ------------------------------------------------
+# Copy application code
+# ------------------------------------------------
 COPY server.js ./
-COPY student_private.pem ./
 COPY scripts/ ./scripts/
 
-# Create volume mount points
-# - Create /data directory
-# - Create /cron directory
-# - Set permissions (755)
+# NOTE: In production, mount private keys via volume or secrets
+COPY student_private.pem ./
+
+# ------------------------------------------------
+# Volumes
+# ------------------------------------------------
 RUN mkdir -p /data /cron && \
     chmod 755 /data /cron
 
-# Create cron job script
-RUN echo '#!/bin/sh' > /app/cron-job.sh && \
-    echo '# Cron job to generate TOTP every minute' >> /app/cron-job.sh && \
-    echo 'cd /app && /usr/local/bin/node scripts/log_2fa_cron.js >> /cron/last_code.txt 2>&1' >> /app/cron-job.sh && \
-    chmod +x /app/cron-job.sh
+VOLUME ["/data", "/cron"]
 
-# Install cron job (runs every minute)
-# Set permissions to 0644 as required
-RUN echo "* * * * * /app/cron-job.sh" > /etc/crontabs/root && \
+# ------------------------------------------------
+# Cron job (runs every minute)
+# ------------------------------------------------
+RUN echo '* * * * * cd /app && node scripts/log_2fa_cron.js >> /cron/last_code.txt 2>&1' \
+    > /etc/crontabs/root && \
     chmod 0644 /etc/crontabs/root
 
-# Create startup script
+# ------------------------------------------------
+# Startup script (single source of truth)
+# ------------------------------------------------
 RUN echo '#!/bin/sh' > /app/start.sh && \
     echo 'set -e' >> /app/start.sh && \
-    echo 'echo "Starting PKI-Based 2FA Microservice..."' >> /app/start.sh && \
-    echo 'echo "============================================"' >> /app/start.sh && \
+    echo 'echo "Starting PKI-Based 2FA Microservice"' >> /app/start.sh && \
+    echo 'echo "------------------------------------"' >> /app/start.sh && \
     echo '' >> /app/start.sh && \
-    echo '# Start cron daemon in background' >> /app/start.sh && \
-    echo 'crond -b -l 2 2>&1' >> /app/start.sh && \
-    echo 'echo "✓ Cron daemon started"' >> /app/start.sh && \
+    echo '# Start cron in background' >> /app/start.sh && \
+    echo 'crond -b -l 2' >> /app/start.sh && \
+    echo 'echo "✓ Cron started"' >> /app/start.sh && \
     echo '' >> /app/start.sh && \
-    echo '# Start API server (foreground)' >> /app/start.sh && \
-    echo 'echo "✓ Starting API server on port 8080..."' >> /app/start.sh && \
+    echo '# Start Node.js server (foreground)' >> /app/start.sh && \
+    echo 'echo "✓ API server running on port 8080"' >> /app/start.sh && \
     echo 'exec node server.js' >> /app/start.sh && \
     chmod +x /app/start.sh
 
-# EXPOSE 8080
+# ------------------------------------------------
+# Networking
+# ------------------------------------------------
 EXPOSE 8080
 
-# Create volumes
-VOLUME ["/data", "/cron"]
+# ------------------------------------------------
+# Healthcheck
+# ------------------------------------------------
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
+  CMD wget -q --spider http://127.0.0.1:8080 || exit 1
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-    CMD wget --no-verbose --tries=1 --spider http://localhost:8080/ || exit 1
-
-# Start both cron and API server
-CMD ["sh", "-c", "crond -b && exec node server.js"]
+# ------------------------------------------------
+# Entrypoint
+# ------------------------------------------------
+CMD ["/app/start.sh"]

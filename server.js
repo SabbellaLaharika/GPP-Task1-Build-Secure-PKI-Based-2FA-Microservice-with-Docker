@@ -231,11 +231,13 @@ app.get('/', (req, res) => {
 });
 
 // Start server
-app.listen(PORT, '0.0.0.0', () => {
+const server = app.listen(PORT, '0.0.0.0', () => {
+    const address = server.address();
     console.log('\n╔═══════════════════════════════════════════════════════════╗');
     console.log('║   🔐 PKI-BASED 2FA MICROSERVICE API                      ║');
     console.log('║   ═════════════════════════════════════════════════════   ║');
     console.log(`║   Server running on port ${PORT}                            ║`);
+    console.log(`║   Address: ${address.address}, Family: ${address.family}    ║`);
     console.log(`║   API: http://localhost:${PORT}                             ║`);
     console.log('╚═══════════════════════════════════════════════════════════╝\n');
     console.log('Available endpoints:');

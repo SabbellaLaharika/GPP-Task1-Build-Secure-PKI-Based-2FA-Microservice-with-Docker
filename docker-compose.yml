@@ -1,5 +1,5 @@
 services:
-  pki-2fa-service:              # Service name
+  app:              # Service name
     build:
       context: .                 # Build from current directory
       dockerfile: Dockerfile     # Use this Dockerfile
