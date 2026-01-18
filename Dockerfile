@@ -48,6 +48,7 @@ COPY package.json ./
 # Copy application code
 # ------------------------------------------------
 COPY server.js ./
+COPY request-seed.js ./
 COPY scripts/ ./scripts/
 
 # NOTE: In production, mount private keys via volume or secrets
@@ -75,6 +76,14 @@ RUN echo '#!/bin/sh' > /app/start.sh && \
     echo 'set -e' >> /app/start.sh && \
     echo 'echo "Starting PKI-Based 2FA Microservice"' >> /app/start.sh && \
     echo 'echo "------------------------------------"' >> /app/start.sh && \
+    echo '' >> /app/start.sh && \
+    echo '# One-time encrypted seed bootstrap' >> /app/start.sh && \
+    echo 'if [ ! -f /app/encrypted_seed.txt ]; then' >> /app/start.sh && \
+    echo '  echo "🔑 Encrypted seed not found. Requesting from instructor API..."' >> /app/start.sh && \
+    echo '  node /app/request-seed.js || echo "⚠️ Seed request failed, continuing anyway"' >> /app/start.sh && \
+    echo 'else' >> /app/start.sh && \
+    echo '  echo "🔑 Encrypted seed already exists. Skipping request."' >> /app/start.sh && \
+    echo 'fi' >> /app/start.sh && \
     echo '' >> /app/start.sh && \
     echo '# Start cron in background' >> /app/start.sh && \
     echo 'crond -b -l 2' >> /app/start.sh && \

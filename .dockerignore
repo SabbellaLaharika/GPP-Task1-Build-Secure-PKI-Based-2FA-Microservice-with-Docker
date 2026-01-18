@@ -9,7 +9,6 @@ seed.txt
 .env
 decrypt-seed.js
 generate-totp.js
-request-seed.js
 verify-key.js
 generate-keys.js
 instructor_public.pem
